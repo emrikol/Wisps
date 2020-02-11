@@ -3,9 +3,9 @@
  * Plugin Name: Wisps
  * Plugin URI: https://github.com/emrikol/wisps
  * Description: Wisps are Gist-like code posts for WordPress
- * Version: 1.0.0
+ * Version: 2.0.0
  * Author: Derrick Tennant
- * Author URI: https://emrikol.com/
+ * Author URI: https://derrick.blog/
  * GitHub Plugin URI: https://github.com/emrikol/wisps
  * Text Domain: wisps
  * License: GPL-2.0+
@@ -30,7 +30,7 @@ function wisps_add_code_editor( $hook ) {
 
 	if ( 'post.php' === $hook || 'post-new.php' === $hook ) {
 		if ( isset( $_GET['post'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			$wisp_mime = get_post_meta( (int) $_GET['post'], 'wisp_mime', true ) ?? 'text/plain'; // phpcs:ignore Generic.PHP.Syntax.PHPSyntax, WordPress.Security.NonceVerification.Recommended
+			$wisp_mime = get_post_meta( (int) $_GET['post'], '_wisp_mime', true ) ?? 'text/plain'; // phpcs:ignore Generic.PHP.Syntax.PHPSyntax, WordPress.Security.NonceVerification.Recommended
 		}
 
 		wp_enqueue_code_editor( array( 'type' => $wisp_mime ) );
@@ -43,8 +43,8 @@ add_action( 'admin_enqueue_scripts', 'wisps_add_code_editor' );
  * Registers meta boxes.
  */
 function wisps_add_metaboxes() {
-	add_meta_box( 'wisp-code', __( 'Wisp Code', 'wisps' ), 'wisps_metabox_editor', 'wisp', 'advanced', 'high' );
-	add_meta_box( 'wisp-mime', __( 'Mime Type', 'wisps' ), 'wisps_metabox_mime_type', 'wisp', 'side', 'high' );
+	add_meta_box( 'wisp-code', esc_html__( 'Wisp Code', 'wisps' ), 'wisps_metabox_editor', 'wisp', 'advanced', 'high' );
+	add_meta_box( 'wisp-mime', esc_html__( 'Mime Type', 'wisps' ), 'wisps_metabox_mime_type', 'wisp', 'side', 'high' );
 }
 add_action( 'add_meta_boxes', 'wisps_add_metaboxes' );
 
@@ -55,12 +55,12 @@ add_action( 'add_meta_boxes', 'wisps_add_metaboxes' );
  */
 function wisps_metabox_editor( $post ) {
 	$post_id   = $post->ID;
-	$wisp_data = get_post_field( 'post_content', $post_id );
+	$wisp_data = base64_decode( get_post_meta( (int) $_GET['post'], '_wisp_data', true ) );
 	$wisp_name = get_the_title( $post_id );
 
 	?>
 	<fieldset>
-		<textarea id="wisp_code_editor" rows="5" name="wisp_data" class="widefat textarea"><?php echo esc_textarea( $wisp_data ); ?></textarea>   
+		<textarea id="wisp_code_editor" rows="5" name="wisp_data" class="widefat textarea"><?php echo esc_textarea( $wisp_data ); ?></textarea>
 	</fieldset>
 	<?php
 }
@@ -120,12 +120,13 @@ function wisps_save_data( $post_id ) {
 		wp_update_post(
 			[
 				'ID'           => $post_id,
-				'post_content' => $wisp_data,
+				'post_content' => $wisp_data, // Save in post_content for better searching.
 				'post_title'   => $wisp_name,
 			]
 		);
 
-		update_post_meta( $post_id, 'wisp_mime', $wisp_mime );
+		update_post_meta( $post_id, '_wisp_mime', $wisp_mime );
+		update_post_meta( $post_id, '_wisp_data', base64_encode( $wisp_data ) );
 
 		add_action( 'save_post', 'wisps_save_data' );
 	}
@@ -208,7 +209,7 @@ function wisps_title_placeholder( $title ) {
 	$screen = get_current_screen();
 
 	if ( 'wisp' === $screen->post_type ) {
-		$title = __( 'Filename including extension...', 'wisps' );
+		$title = esc_html__( 'Filename including extension...', 'wisps' );
 	}
 
 	return $title;
@@ -227,7 +228,7 @@ function wisps_rename_excerpt( $translation, $original ) {
 		$screen = get_current_screen();
 		if ( 'wisp' === $screen->post_type ) {
 			if ( 'Excerpt' === $original ) {
-				return __( 'Wisp Description', 'wisps' );
+				return esc_html__( 'Wisp Description', 'wisps' );
 			} elseif ( false !== strpos( $original, 'Excerpts are optional hand-crafted summaries of your' ) ) {
 				return '';
 			}
@@ -243,38 +244,38 @@ add_filter( 'gettext', 'wisps_rename_excerpt', 10, 2 );
  */
 function wisps_register_cpt() {
 	$labels = array(
-		'name'                  => _x( 'Wisps', 'Post Type General Name', 'wisps' ),
-		'singular_name'         => _x( 'Wisp', 'Post Type Singular Name', 'wisps' ),
-		'menu_name'             => __( 'Wisps', 'wisps' ),
-		'name_admin_bar'        => __( 'Wisp', 'wisps' ),
-		'archives'              => __( 'Wisp Archives', 'wisps' ),
-		'attributes'            => __( 'Wisp Attributes', 'wisps' ),
-		'parent_item_colon'     => __( 'Parent Wisp:', 'wisps' ),
-		'all_items'             => __( 'All Wisps', 'wisps' ),
-		'add_new_item'          => __( 'Add New Wisp', 'wisps' ),
-		'add_new'               => __( 'Add New', 'wisps' ),
-		'new_item'              => __( 'New Wisp', 'wisps' ),
-		'edit_item'             => __( 'Edit Wisp', 'wisps' ),
-		'update_item'           => __( 'Update Wisp', 'wisps' ),
-		'view_item'             => __( 'View Wisp', 'wisps' ),
-		'view_items'            => __( 'View Wisps', 'wisps' ),
-		'search_items'          => __( 'Search Wisp', 'wisps' ),
-		'not_found'             => __( 'Not found', 'wisps' ),
-		'not_found_in_trash'    => __( 'Not found in Trash', 'wisps' ),
-		'featured_image'        => __( 'Featured Image', 'wisps' ),
-		'set_featured_image'    => __( 'Set featured image', 'wisps' ),
-		'remove_featured_image' => __( 'Remove featured image', 'wisps' ),
-		'use_featured_image'    => __( 'Use as featured image', 'wisps' ),
-		'insert_into_item'      => __( 'Insert into wisp', 'wisps' ),
-		'uploaded_to_this_item' => __( 'Uploaded to this wisp', 'wisps' ),
-		'items_list'            => __( 'Wisps list', 'wisps' ),
-		'items_list_navigation' => __( 'Wisps list navigation', 'wisps' ),
-		'filter_items_list'     => __( 'Filter wisps list', 'wisps' ),
+		'name'                  => esc_html_x( 'Wisps', 'Post Type General Name', 'wisps' ),
+		'singular_name'         => esc_html_x( 'Wisp', 'Post Type Singular Name', 'wisps' ),
+		'menu_name'             => esc_html__( 'Wisps', 'wisps' ),
+		'name_admin_bar'        => esc_html__( 'Wisp', 'wisps' ),
+		'archives'              => esc_html__( 'Wisp Archives', 'wisps' ),
+		'attributes'            => esc_html__( 'Wisp Attributes', 'wisps' ),
+		'parent_item_colon'     => esc_html__( 'Parent Wisp:', 'wisps' ),
+		'all_items'             => esc_html__( 'All Wisps', 'wisps' ),
+		'add_new_item'          => esc_html__( 'Add New Wisp', 'wisps' ),
+		'add_new'               => esc_html__( 'Add New', 'wisps' ),
+		'new_item'              => esc_html__( 'New Wisp', 'wisps' ),
+		'edit_item'             => esc_html__( 'Edit Wisp', 'wisps' ),
+		'update_item'           => esc_html__( 'Update Wisp', 'wisps' ),
+		'view_item'             => esc_html__( 'View Wisp', 'wisps' ),
+		'view_items'            => esc_html__( 'View Wisps', 'wisps' ),
+		'search_items'          => esc_html__( 'Search Wisp', 'wisps' ),
+		'not_found'             => esc_html__( 'Not found', 'wisps' ),
+		'not_found_in_trash'    => esc_html__( 'Not found in Trash', 'wisps' ),
+		'featured_image'        => esc_html__( 'Featured Image', 'wisps' ),
+		'set_featured_image'    => esc_html__( 'Set featured image', 'wisps' ),
+		'remove_featured_image' => esc_html__( 'Remove featured image', 'wisps' ),
+		'use_featured_image'    => esc_html__( 'Use as featured image', 'wisps' ),
+		'insert_into_item'      => esc_html__( 'Insert into wisp', 'wisps' ),
+		'uploaded_to_this_item' => esc_html__( 'Uploaded to this wisp', 'wisps' ),
+		'items_list'            => esc_html__( 'Wisps list', 'wisps' ),
+		'items_list_navigation' => esc_html__( 'Wisps list navigation', 'wisps' ),
+		'filter_items_list'     => esc_html__( 'Filter wisps list', 'wisps' ),
 	);
 
 	$args = array(
-		'label'               => __( 'Wisp', 'wisps' ),
-		'description'         => __( 'Wisps', 'wisps' ),
+		'label'               => esc_html__( 'Wisp', 'wisps' ),
+		'description'         => esc_html__( 'Wisps', 'wisps' ),
 		'labels'              => $labels,
 		'supports'            => array( 'title', 'comments', 'revisions', 'excerpt' ),
 		'hierarchical'        => false,
