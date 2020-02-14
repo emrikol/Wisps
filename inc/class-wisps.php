@@ -367,6 +367,7 @@ class Wisps {
 		// Mostly borrowed from core's `get_post_embed_html()`.
 		$embed_url = get_post_embed_url( $post );
 		$wisp_data = self::meta_get_data( $post->ID );
+		$mime_type = get_post_meta( $post->ID, '_wisp_mime', true );
 
 		ob_start();
 		// phpcs:disable WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
@@ -383,7 +384,7 @@ class Wisps {
 		displayed with ❤ by <a href="https://github.com/emrikol/wisps">Wisps</a>
 	</div>
 </div>
-<script type='text/javascript'><?php echo file_get_contents( WPINC . '/js/wp-embed.js' ); ?></script>
+<script type='text/javascript'><?php echo file_get_contents( ABSPATH . WPINC . '/js/wp-embed.js' ); ?></script>
 		<?php
 		printf(
 			'<iframe sandbox="allow-scripts" security="restricted" src="%1$s" width="%2$d" height="%3$d" title="%4$s" frameborder="0" marginwidth="0" marginheight="0" scrolling="yes" class="wp-embedded-content wisp-embedded-content" style="width: 100%;"></iframe>',

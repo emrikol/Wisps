@@ -120,6 +120,6 @@ switch ( $wisp_mime ) {
 				</div>
 			</div>
 		</div>
-		<script><?php echo file_get_contents( WPINC . '/js/wp-embed-template.js' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents,WordPress.Security.EscapeOutput.OutputNotEscaped ?></script>
+		<script><?php echo file_get_contents( ABSPATH . WPINC . '/js/wp-embed-template.js' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents,WordPress.Security.EscapeOutput.OutputNotEscaped ?></script>
 	</body>
 </html>
