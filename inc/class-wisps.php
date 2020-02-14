@@ -139,9 +139,7 @@ class Wisps {
 		}
 
 		if ( 'post.php' === $hook || 'post-new.php' === $hook ) {
-			if ( isset( $_GET['post'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-				$wisp_mime = get_post_meta( (int) $_GET['post'], '_wisp_mime', true ) ?? 'text/plain'; // phpcs:ignore Generic.PHP.Syntax.PHPSyntax, WordPress.Security.NonceVerification.Recommended
-			}
+			$wisp_mime = get_post_meta( $post->ID, '_wisp_mime', true ) ?? 'text/plain'; // phpcs:ignore Generic.PHP.Syntax.PHPSyntax, WordPress.Security.NonceVerification.Recommended
 
 			wp_enqueue_code_editor( array( 'type' => $wisp_mime ) );
 			wp_enqueue_script( 'wisp-code-editor', plugin_dir_url( __FILE__ ) . '../code-editor.js', array( 'jquery' ), filemtime( plugin_dir_path( __FILE__ ) . '../code-editor.js' ), true );
@@ -178,8 +176,7 @@ class Wisps {
 	 * @param WP_Post $post Post object.
 	 */
 	public function wisps_metabox_mime_type( $post ) {
-		$post_id   = $post->ID;
-		$wisp_mime = get_post_meta( $post_id, 'wisp_mime', true );
+		$wisp_mime = get_post_meta( $post->ID, '_wisp_mime', true );
 		// Available mime types are taken from the wp_enqueue_code_editor function source.
 		?>
 		<fieldset>
@@ -214,18 +211,20 @@ class Wisps {
 	 */
 	public function wisps_save_data( $post_id ) {
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-		if ( defined( 'DOING_AJAX' ) || ! isset( $_POST['mime_type_nonce'] ) || ! wp_verify_nonce( $_POST['mime_type_nonce'], 'wisp_mime_type_nonce' ) ) {
+		if (
+			defined( 'DOING_AJAX' )
+			|| ! isset( $_POST['mime_type_nonce'] )
+			|| ! wp_verify_nonce( $_POST['mime_type_nonce'], 'wisp_mime_type_nonce' )
+		) {
 			return;
 		}
 
 		if ( isset( $_POST['wisp_data'] ) ) {
 			$wisp_data = wp_unslash( $_POST['wisp_data'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			$wisp_mime = isset( $_POST['wisp_mime'] ) ? sanitize_text_field( wp_unslash( $_POST['wisp_mime'] ) ) : 'text/plain';
-			$wisp_name = sanitize_file_name( get_the_title( $post_id ) );
 
 			self::update_wisp_data( $post_id, $wisp_mime );
-
-			add_action( 'save_post', 'wisps_save_data' );
+			update_post_meta( $post_id, '_wisp_mime', $wisp_mime )
 		}
 	}
 
