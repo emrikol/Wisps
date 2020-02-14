@@ -1,7 +1,8 @@
 <?php
+// phpcs:disable WordPress.WP.EnqueuedResources
 global $post;
 $wisp_mime = get_post_meta( $post->ID, '_wisp_mime', true ) ?? 'text/plain';
-$wisp_data = base64_decode( get_post_meta( $post->ID, '_wisp_data', true ) );
+$wisp_data = base64_decode( get_post_meta( $post->ID, '_wisp_data', true ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
 
 switch ( $wisp_mime ) {
 	case 'text/plain':
@@ -119,6 +120,6 @@ switch ( $wisp_mime ) {
 				</div>
 			</div>
 		</div>
-		<script><?php echo file_get_contents( WPINC . '/js/wp-embed-template.js' ); ?></script>
+		<script><?php echo file_get_contents( WPINC . '/js/wp-embed-template.js' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents,WordPress.Security.EscapeOutput.OutputNotEscaped ?></script>
 	</body>
 </html>

@@ -49,10 +49,11 @@ class Wisps {
 		add_filter( 'embed_html', array( $this, 'wisp_filter_embed_html' ), 10, 4 );
 	}
 
+	/**
+	 * Flushes rewrite rules on shutdown when plugin is activated.
+	 */
 	public function activate_plugin() {
-		add_action( 'shutdown', function() {
-			flush_rewrite_rules();
-		} );
+		add_action( 'shutdown', 'flush_rewrite_rules' );
 	}
 
 	/**
@@ -161,8 +162,7 @@ class Wisps {
 	 * @param WP_Post $post Post object.
 	 */
 	public function wisps_metabox_editor( $post ) {
-		$post_id   = $post->ID;
-		$wisp_data = base64_decode( get_post_meta( (int) $_GET['post'], '_wisp_data', true ) );
+		$wisp_data = self::get_wisp_data( $post->ID );
 		$wisp_name = get_the_title( $post_id );
 
 		?>
@@ -204,6 +204,7 @@ class Wisps {
 			</select>
 		</fieldset>
 		<?php
+		wp_nonce_field( 'wisp_mime_type_nonce', 'mime_type_nonce' );
 	}
 
 	/**
@@ -212,7 +213,8 @@ class Wisps {
 	 * @param int $post_id Post Object ID.
 	 */
 	public function wisps_save_data( $post_id ) {
-		if ( defined( 'DOING_AJAX' ) ) {
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		if ( defined( 'DOING_AJAX' ) || ! isset( $_POST['mime_type_nonce'] ) || ! wp_verify_nonce( $_POST['mime_type_nonce'], 'wisp_mime_type_nonce' ) ) {
 			return;
 		}
 
@@ -221,26 +223,47 @@ class Wisps {
 			$wisp_mime = isset( $_POST['wisp_mime'] ) ? sanitize_text_field( wp_unslash( $_POST['wisp_mime'] ) ) : 'text/plain';
 			$wisp_name = sanitize_file_name( get_the_title( $post_id ) );
 
-			update_post_meta( $post_id, '_wisp_mime', $wisp_mime );
-			update_post_meta( $post_id, '_wisp_data', base64_encode( $wisp_data ) );
+			self::update_wisp_data( $post_id, $wisp_mime );
 
 			add_action( 'save_post', 'wisps_save_data' );
 		}
 	}
 
+	/**
+	 * Returns wisp code data.
+	 *
+	 * @param int $post_id The wisp post id.
+	 * @return string Wisp code data.
+	 */
+	public function get_wisp_data( $post_id ) {
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+		return base64_decode( get_post_meta( $post_id, '_wisp_data', true ) );
+	}
+
+	/**
+	 * Save wisp code data.
+	 *
+	 * @param int    $post_id The wisp post id.
+	 * @param string $data    Wisp code data.
+	 * @return int|bool The new meta field ID if a field with the given key didn't exist and was therefore added, true on successful update, false on failure.
+	 */
+	public function update_wisp_data( $post_id, $data ) {
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+		return update_post_meta( $post_id, '_wisp_data', base64_encode( $wisp_data ) );
+	}
 
 	/**
 	 * Filters the wisp content to safely display it for themes that do not have wisp support.
 	 *
 	 * @param string $content Post Object Content.
-	 * @erturn string Post Object Content.
+	 * @return string Post Object Content.
 	 */
 	public function wisps_safely_display_content( $content ) {
 		if ( ! current_theme_supports( 'wisps' ) ) {
 			global $post;
 
 			if ( 'wisp' === $post->post_type ) {
-				$wisp_data = base64_decode( get_post_meta( $post->ID, '_wisp_data', true ) );
+				$wisp_data = self::get_wisp_data( $post->ID );
 				return '<pre>' . esc_html( $wisp_data ) . '</pre>';
 			}
 		}
@@ -271,7 +294,7 @@ class Wisps {
 				exit;
 			}
 
-			$wisp_data = base64_decode( get_post_meta( $post->ID, '_wisp_data', true ) );
+			$wisp_data = self::get_wisp_data( $post->ID );
 
 			if ( 'view' === $wp_query->query_vars['wisp_raw'] ) {
 				header( 'Content-Type: text/plain' );
@@ -294,7 +317,7 @@ class Wisps {
 	 * Filters the title placeholder.
 	 *
 	 * @param string $title The title placeholder.
-	 * @erturn string The title placeholder.
+	 * @return string The title placeholder.
 	 */
 	public function wisps_title_placeholder( $title ) {
 		$screen = get_current_screen();
@@ -311,7 +334,7 @@ class Wisps {
 	 *
 	 * @param string $translation The new "translated" text.
 	 * @param string $original    The original text.
-	 * @erturn string The new "translated" text.
+	 * @return string The new "translated" text.
 	 */
 	public function wisps_rename_excerpt( $translation, $original ) {
 		if ( function_exists( 'get_current_screen' ) ) {
@@ -328,6 +351,15 @@ class Wisps {
 		return $translation;
 	}
 
+	/**
+	 * Filters the core oembed header data.
+	 *
+	 * @param string  $output The default oembed data.
+	 * @param WP_Post $post The post object.
+	 * @param int     $width The defailt width.
+	 * @param int     $height The defailt height.
+	 * @return string The custom wisp oembed data.
+	 */
 	public function wisp_filter_embed_html( $output, $post, $width, $height ) {
 		if ( 'wisp' !== $post->post_type ) {
 			return $output;
@@ -335,10 +367,12 @@ class Wisps {
 
 		// Mostly borrowed from core's `get_post_embed_html()`.
 		$embed_url = get_post_embed_url( $post );
-		$wisp_data = base64_decode( get_post_meta( $post->ID, '_wisp_data', true ) );
+		$wisp_data = self::get_wisp_data( $post->ID );
 
 		ob_start();
-?>
+		// phpcs:disable WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
+		?>
 <div class="wisp-embed">
 	<div id="gist-data">
 		<pre><code class="line-numbers <?php echo sanitize_html_class( $mime_type ); ?>"><?php echo esc_html( $wisp_data ); ?></code></pre>
@@ -351,7 +385,8 @@ class Wisps {
 	</div>
 </div>
 <script type='text/javascript'><?php echo file_get_contents( WPINC . '/js/wp-embed.js' ); ?></script>
-<?php printf(
+		<?php
+		printf(
 			'<iframe sandbox="allow-scripts" security="restricted" src="%1$s" width="%2$d" height="%3$d" title="%4$s" frameborder="0" marginwidth="0" marginheight="0" scrolling="yes" class="wp-embedded-content wisp-embedded-content" style="width: 100%;"></iframe>',
 			esc_url( $embed_url ),
 			absint( $width ),
@@ -368,5 +403,4 @@ class Wisps {
 
 		return ob_get_clean();
 	}
-
 }
