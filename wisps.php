@@ -17,6 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 require __DIR__ . '/inc/class-wisp.php';
-require __DIR__ . '/inc/class-wisp-cpt.php';
 
-Wisps::get_instance()->cpt->init_hooks();
+register_activation_hook( __FILE__, array( Wisps::get_instance(), 'activate_plugin' ) );
+
+Wisps::get_instance()->init_hooks();
