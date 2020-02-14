@@ -36,17 +36,17 @@ class Wisps {
 	 * Initializes hooks for admin screen.
 	 */
 	public function init_hooks() {
-		add_action( 'init', array( $this, 'wisps_register_cpt' ) );
-		add_action( 'init', array( $this, 'wisps_add_rewrites' ) );
-		add_action( 'admin_enqueue_scripts', array( $this, 'wisps_add_code_editor' ) );
-		add_action( 'add_meta_boxes', array( $this, 'wisps_add_metaboxes' ) );
-		add_action( 'save_post', array( $this, 'wisps_save_data' ) );
-		add_action( 'template_redirect', array( $this, 'wisps_display_raw_content' ) );
+		add_action( 'init', array( $this, 'register_cpt' ) );
+		add_action( 'init', array( $this, 'add_rewrites' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'add_code_editor' ) );
+		add_action( 'add_meta_boxes', array( $this, 'add_metaboxes' ) );
+		add_action( 'save_post', array( $this, 'save_meta' ) );
+		add_action( 'template_redirect', array( $this, 'display_raw_content' ) );
 
-		add_filter( 'the_content', array( $this, 'wisps_safely_display_content' ), PHP_INT_MIN, 1 );
-		add_filter( 'enter_title_here', array( $this, 'wisps_title_placeholder' ) );
-		add_filter( 'gettext', array( $this, 'wisps_rename_excerpt' ), 10, 2 );
-		add_filter( 'embed_html', array( $this, 'wisp_filter_embed_html' ), 10, 4 );
+		add_filter( 'the_content', array( $this, 'safely_display_content' ), PHP_INT_MIN, 1 );
+		add_filter( 'enter_title_here', array( $this, 'title_placeholder' ) );
+		add_filter( 'gettext', array( $this, 'rename_excerpt' ), 10, 2 );
+		add_filter( 'embed_html', array( $this, 'filter_embed_html' ), 10, 4 );
 	}
 
 	/**
@@ -59,7 +59,7 @@ class Wisps {
 	/**
 	 * Registers the custom post type.
 	 */
-	public function wisps_register_cpt() {
+	public function register_cpt() {
 		$labels = array(
 			'name'                  => esc_html_x( 'Wisps', 'Post Type General Name', 'wisps' ),
 			'singular_name'         => esc_html_x( 'Wisp', 'Post Type Singular Name', 'wisps' ),
@@ -118,7 +118,7 @@ class Wisps {
 	/**
 	 * Adds rewrites to view and download wisps.
 	 */
-	public function wisps_add_rewrites() {
+	public function add_rewrites() {
 		add_rewrite_tag( '%wisp_raw%', '([^&]+)' );
 		add_rewrite_rule( 'wisp/(.+?)/view/?$', 'index.php?post_type=wisp&post_name=$matches[1]&wisp_raw=view', 'top' );
 		add_rewrite_rule( 'wisp/(.+?)/raw/?$', 'index.php?post_type=wisp&post_name=$matches[1]&wisp_raw=view', 'top' );
@@ -131,7 +131,7 @@ class Wisps {
 	 *
 	 * @param string $hook The page hook being ran on.
 	 */
-	public function wisps_add_code_editor( $hook ) {
+	public function add_code_editor( $hook ) {
 		global $post;
 
 		if ( ! $post || 'wisp' !== $post->post_type ) {
@@ -149,9 +149,9 @@ class Wisps {
 	/**
 	 * Registers meta boxes.
 	 */
-	public function wisps_add_metaboxes() {
-		add_meta_box( 'wisp-code', esc_html__( 'Wisp Code', 'wisps' ), array( $this, 'wisps_metabox_editor' ), 'wisp', 'advanced', 'high' );
-		add_meta_box( 'wisp-mime', esc_html__( 'Mime Type', 'wisps' ), array( $this, 'wisps_metabox_mime_type' ), 'wisp', 'side', 'high' );
+	public function add_metaboxes() {
+		add_meta_box( 'wisp-code', esc_html__( 'Wisp Code', 'wisps' ), array( $this, 'metabox_code_editor' ), 'wisp', 'advanced', 'high' );
+		add_meta_box( 'wisp-mime', esc_html__( 'Mime Type', 'wisps' ), array( $this, 'metabox_mime_type' ), 'wisp', 'side', 'high' );
 	}
 
 	/**
@@ -159,8 +159,8 @@ class Wisps {
 	 *
 	 * @param WP_Post $post Post object.
 	 */
-	public function wisps_metabox_editor( $post ) {
-		$wisp_data = self::get_wisp_data( $post->ID );
+	public function metabox_code_editor( $post ) {
+		$wisp_data = self::meta_get_data( $post->ID );
 		$wisp_name = get_the_title( $post_id );
 
 		?>
@@ -175,7 +175,7 @@ class Wisps {
 	 *
 	 * @param WP_Post $post Post object.
 	 */
-	public function wisps_metabox_mime_type( $post ) {
+	public function metabox_mime_type( $post ) {
 		$wisp_mime = get_post_meta( $post->ID, '_wisp_mime', true );
 		// Available mime types are taken from the wp_enqueue_code_editor function source.
 		?>
@@ -209,7 +209,7 @@ class Wisps {
 	 *
 	 * @param int $post_id Post Object ID.
 	 */
-	public function wisps_save_data( $post_id ) {
+	public function save_meta( $post_id ) {
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		if (
 			defined( 'DOING_AJAX' )
@@ -223,7 +223,7 @@ class Wisps {
 			$wisp_data = wp_unslash( $_POST['wisp_data'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			$wisp_mime = isset( $_POST['wisp_mime'] ) ? sanitize_text_field( wp_unslash( $_POST['wisp_mime'] ) ) : 'text/plain';
 
-			self::update_wisp_data( $post_id, $wisp_mime );
+			self::meta_update_data( $post_id, $wisp_mime );
 			update_post_meta( $post_id, '_wisp_mime', $wisp_mime )
 		}
 	}
@@ -234,7 +234,7 @@ class Wisps {
 	 * @param int $post_id The wisp post id.
 	 * @return string Wisp code data.
 	 */
-	public function get_wisp_data( $post_id ) {
+	public function meta_get_data( $post_id ) {
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
 		return base64_decode( get_post_meta( $post_id, '_wisp_data', true ) );
 	}
@@ -246,7 +246,7 @@ class Wisps {
 	 * @param string $data    Wisp code data.
 	 * @return int|bool The new meta field ID if a field with the given key didn't exist and was therefore added, true on successful update, false on failure.
 	 */
-	public function update_wisp_data( $post_id, $data ) {
+	public function meta_update_data( $post_id, $data ) {
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 		return update_post_meta( $post_id, '_wisp_data', base64_encode( $wisp_data ) );
 	}
@@ -257,12 +257,12 @@ class Wisps {
 	 * @param string $content Post Object Content.
 	 * @return string Post Object Content.
 	 */
-	public function wisps_safely_display_content( $content ) {
+	public function safely_display_content( $content ) {
 		if ( ! current_theme_supports( 'wisps' ) ) {
 			global $post;
 
 			if ( 'wisp' === $post->post_type ) {
-				$wisp_data = self::get_wisp_data( $post->ID );
+				$wisp_data = self::meta_get_data( $post->ID );
 				return '<pre>' . esc_html( $wisp_data ) . '</pre>';
 			}
 		}
@@ -274,7 +274,7 @@ class Wisps {
 	/**
 	 * Template redirect to either display the raw text or downloads the file.
 	 */
-	public function wisps_display_raw_content() {
+	public function display_raw_content() {
 		global $wp_query;
 
 		if ( 'wisp' === $wp_query->query_vars['post_type'] && isset( $wp_query->query_vars['wisp_raw'] ) ) {
@@ -293,7 +293,7 @@ class Wisps {
 				exit;
 			}
 
-			$wisp_data = self::get_wisp_data( $post->ID );
+			$wisp_data = self::meta_get_data( $post->ID );
 
 			if ( 'view' === $wp_query->query_vars['wisp_raw'] ) {
 				header( 'Content-Type: text/plain' );
@@ -318,7 +318,7 @@ class Wisps {
 	 * @param string $title The title placeholder.
 	 * @return string The title placeholder.
 	 */
-	public function wisps_title_placeholder( $title ) {
+	public function title_placeholder( $title ) {
 		$screen = get_current_screen();
 
 		if ( 'wisp' === $screen->post_type ) {
@@ -335,7 +335,7 @@ class Wisps {
 	 * @param string $original    The original text.
 	 * @return string The new "translated" text.
 	 */
-	public function wisps_rename_excerpt( $translation, $original ) {
+	public function rename_excerpt( $translation, $original ) {
 		if ( function_exists( 'get_current_screen' ) ) {
 			$screen = get_current_screen();
 			if ( 'wisp' === $screen->post_type ) {
@@ -359,14 +359,14 @@ class Wisps {
 	 * @param int     $height The defailt height.
 	 * @return string The custom wisp oembed data.
 	 */
-	public function wisp_filter_embed_html( $output, $post, $width, $height ) {
+	public function filter_embed_html( $output, $post, $width, $height ) {
 		if ( 'wisp' !== $post->post_type ) {
 			return $output;
 		}
 
 		// Mostly borrowed from core's `get_post_embed_html()`.
 		$embed_url = get_post_embed_url( $post );
-		$wisp_data = self::get_wisp_data( $post->ID );
+		$wisp_data = self::meta_get_data( $post->ID );
 
 		ob_start();
 		// phpcs:disable WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
