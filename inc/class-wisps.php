@@ -248,7 +248,7 @@ class Wisps {
 	 */
 	public function meta_update_data( $post_id, $data ) {
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
-		return update_post_meta( $post_id, '_wisp_data', base64_encode( $wisp_data ) );
+		return update_post_meta( $post_id, '_wisp_data', base64_encode( $data ) );
 	}
 
 	/**
@@ -338,7 +338,7 @@ class Wisps {
 	public function rename_excerpt( $translation, $original ) {
 		if ( function_exists( 'get_current_screen' ) ) {
 			$screen = get_current_screen();
-			if ( 'wisp' === $screen->post_type ) {
+			if ( null !== $screen && 'wisp' === $screen->post_type ) {
 				if ( 'Excerpt' === $original ) {
 					return esc_html__( 'Wisp Description', 'wisps' );
 				} elseif ( false !== strpos( $original, 'Excerpts are optional hand-crafted summaries of your' ) ) {
