@@ -224,7 +224,7 @@ class Wisps {
 			$wisp_mime = isset( $_POST['wisp_mime'] ) ? sanitize_text_field( wp_unslash( $_POST['wisp_mime'] ) ) : 'text/plain';
 
 			self::meta_update_data( $post_id, $wisp_mime );
-			update_post_meta( $post_id, '_wisp_mime', $wisp_mime )
+			update_post_meta( $post_id, '_wisp_mime', $wisp_mime );
 		}
 	}
 
