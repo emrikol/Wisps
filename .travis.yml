@@ -53,9 +53,9 @@ before_script:
       wget -O $PHPCS_DIR/phpcs https://squizlabs.github.io/PHP_CodeSniffer/phpcs.phar
       chmod +x $PHPCS_DIR/phpcs
       # Install WordPress Coding Standards.
-      git clone -b master --depth 1 https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards.git $SNIFFS_DIR
+      git clone -b master --depth 1 https://github.com/WordPress-Coding-Standards/WordPress-Coding-Standards.git $SNIFFS_DIR/WordPress-Coding-Standards
       # Install WordPress VIP Coding Standards.
-      git clone -b master --depth 1 https://github.com/Automattic/VIP-Coding-Standards.git $SNIFFS_DIR
+      git clone -b master --depth 1 https://github.com/Automattic/VIP-Coding-Standards.git $SNIFFS_DIR/VIP-Coding-Standards
       # Install PHP Compatibility sniffs.
       git clone -b master --depth 1 https://github.com/wimg/PHPCompatibility.git $SNIFFS_DIR/PHPCompatibility
       # Set install path for PHPCS sniffs.
