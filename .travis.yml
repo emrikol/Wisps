@@ -33,9 +33,13 @@ matrix:
     # - skip PHP 7.4 and WP 5.2 (not compatible)
 
 before_script:
-  - export PHPCS_DIR=/tmp/phpcs
-  - export PHPUNIT_DIR=/tmp/phpunit
-  - export SNIFFS_DIR=/tmp/sniffs
+  - |
+    export PHPCS_DIR=/tmp/phpcs
+    export PHPUNIT_DIR=/tmp/phpunit
+    export SNIFFS_DIR=/tmp/sniffs
+    mkdir $PHPCS_DIR
+    mkdir $PHPUNIT_DIR
+    mkdir $SNIFFS_DIR
   - |
     # Remove Xdebug for a huge performance increase
     if [ -f ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini ]; then
@@ -60,8 +64,8 @@ before_script:
       phpenv rehash
     fi
   - |
-  - bash bin/install-wp-tests.sh wordpress_test root '' localhost $WP_VERSION
-  - export PATH="$PHPUNIT_DIR:$PHPCS_DIR:$PATH"
+    bash bin/install-wp-tests.sh wordpress_test root '' localhost $WP_VERSION
+    export PATH="$PHPUNIT_DIR:$PHPCS_DIR:$PATH"
   - |
     # Install WordPress and PHPUnit
     if [[ ! -z "$WP_VERSION" ]] ; then
