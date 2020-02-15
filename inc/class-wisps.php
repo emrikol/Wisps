@@ -297,9 +297,7 @@ class Wisps {
 
 			if ( 'view' === $wp_query->query_vars['wisp_raw'] ) {
 				header( 'Content-Type: text/plain' );
-			}
-
-			if ( 'download' === $wp_query->query_vars['wisp_raw'] ) {
+			} elseif ( 'download' === $wp_query->query_vars['wisp_raw'] ) {
 				header( 'Content-Description: File Transfer' );
 				header( 'Content-Type: application/octet-stream' );
 				header( 'Content-Disposition: attachment; filename=' . sanitize_file_name( $post->post_title ) );
