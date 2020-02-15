@@ -43,7 +43,7 @@ class Wisps {
 		add_action( 'save_post', array( $this, 'save_meta' ) );
 		add_action( 'template_redirect', array( $this, 'display_raw_content' ) );
 
-		add_filter( 'the_content', array( $this, 'safely_display_content' ), PHP_INT_MIN, 1 );
+		add_filter( 'the_content', array( $this, 'safely_display_content' ), PHP_INT_MIN, 1 ); // phpcs:ignore PHPCompatibility.Constants.NewConstants.php_int_minFound
 		add_filter( 'enter_title_here', array( $this, 'title_placeholder' ) );
 		add_filter( 'gettext', array( $this, 'rename_excerpt' ), 10, 2 );
 		add_filter( 'embed_html', array( $this, 'filter_embed_html' ), 10, 4 );

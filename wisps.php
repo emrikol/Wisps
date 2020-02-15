@@ -18,6 +18,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	return;
 }
 
+// PHP 5.6 Shim.
+if ( ! defined( 'PHP_INT_MIN' ) ) {
+	define( 'PHP_INT_MIN', -9223372036854775808 );
+}
+
 require __DIR__ . '/inc/class-wisps.php';
 
 register_activation_hook( __FILE__, array( Wisps::get_instance(), 'activate_plugin' ) );

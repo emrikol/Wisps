@@ -11,7 +11,7 @@ $wisp_mime = get_post_meta( $post->ID, '_wisp_mime', true );
 if ( empty( $wisp_mime ) ) {
 	$wisp_mime = 'text/plain';
 }
-$wisp_data = base64_decode( get_post_meta( $post->ID, '_wisp_data', true ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
+$wisp_data = Wisps::get_instance()->meta_get_data( $post->ID );
 
 switch ( $wisp_mime ) {
 	case 'text/plain':
