@@ -1,4 +1,10 @@
 <?php
+/**
+ * Default template for oEmbed response.
+ *
+ * @package Wisps
+ */
+
 // phpcs:disable WordPress.WP.EnqueuedResources
 global $post;
 $wisp_mime = get_post_meta( $post->ID, '_wisp_mime', true ) ?? 'text/plain';

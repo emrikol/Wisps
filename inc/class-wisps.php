@@ -210,11 +210,10 @@ class Wisps {
 	 * @param int $post_id Post Object ID.
 	 */
 	public function save_meta( $post_id ) {
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		if (
 			defined( 'DOING_AJAX' )
 			|| ! isset( $_POST['mime_type_nonce'] )
-			|| ! wp_verify_nonce( $_POST['mime_type_nonce'], 'wisp_mime_type_nonce' )
+			|| ! wp_verify_nonce( $_POST['mime_type_nonce'], 'wisp_mime_type_nonce' ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		) {
 			return;
 		}
