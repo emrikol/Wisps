@@ -59,6 +59,7 @@ before_script:
       # Install PHP Compatibility sniffs.
       git clone -b master --depth 1 https://github.com/wimg/PHPCompatibility.git $SNIFFS_DIR/PHPCompatibility
       # Set install path for PHPCS sniffs.
+      echo $PHPCS_DIR/phpcs --config-set installed_paths $SNIFFS_DIR/PHPCompatibility,$SNIFFS_DIR/WordPress-Coding-Standards,$SNIFFS_DIR/VIP-Coding-Standards
       $PHPCS_DIR/phpcs --config-set installed_paths $SNIFFS_DIR/PHPCompatibility,$SNIFFS_DIR/WordPress-Coding-Standards,$SNIFFS_DIR/VIP-Coding-Standards
       # After CodeSniffer install you should refresh your path.
       phpenv rehash
@@ -96,5 +97,5 @@ script:
   # Search for PHP syntax errors.
   - find -L . -name '*.php' -print0 | xargs -0 -n 1 -P 4 php -l
   # WordPress Coding Standards.
-  - if [[ "$SNIFF" == "1" ]]; then $PHPCS_DIR/phpcs -p -s -v -n --standard=WordPress-VIP-Go,WordPress --ignore=tests .; fi
+  - if [[ "$SNIFF" == "1" ]]; then $PHPCS_DIR/phpcs -p -s -v -n --standard=WordPress-VIP-Go,WordPress,PHPCompatibility --runtime-set testVersion 5.6- --ignore=tests .; fi
   - phpunit
