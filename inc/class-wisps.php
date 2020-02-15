@@ -145,7 +145,7 @@ class Wisps {
 			}
 
 			wp_enqueue_code_editor( array( 'type' => $wisp_mime ) );
-			wp_enqueue_script( 'wisp-code-editor', plugin_dir_url( __FILE__ ) . '../code-editor.js', array( 'jquery' ), filemtime( plugin_dir_path( __FILE__ ) . '../code-editor.js' ), true );
+			wp_enqueue_script( 'wisp-code-editor', plugin_dir_url( __FILE__ ) . '../assets/code-editor.js', array( 'jquery' ), filemtime( plugin_dir_path( __FILE__ ) . '../assets/code-editor.js' ), true );
 		}
 	}
 

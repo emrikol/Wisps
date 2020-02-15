@@ -69,6 +69,16 @@ switch ( $wisp_mime ) {
 		$mime_type = 'language-none';
 }
 
+$prismjs_js = add_query_arg(
+	array( 'ver' => rawurlencode( filemtime( plugin_dir_path( __FILE__ ) . '../assets/prismjs.min.js' ) ) ),
+	plugin_dir_url( __FILE__ ) . '../assets/prismjs.min.js'
+);
+
+$prismjs_css = add_query_arg(
+	array( 'ver' => rawurlencode( filemtime( plugin_dir_path( __FILE__ ) . '../assets/prismjs.css' ) ) ),
+	plugin_dir_url( __FILE__ ) . '../assets/prismjs.css'
+);
+
 ?>
 <!DOCTYPE html>
 <html lang="en-US">
@@ -77,12 +87,9 @@ switch ( $wisp_mime ) {
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<meta name='robots' content='noindex,follow' />
 		<link rel="canonical" href="https://wisps.sish.emrikol.com/hello-world/" />
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.19.0/prism.min.js"></script>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.19.0/plugins/autoloader/prism-autoloader.min.js"></script>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.19.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+		<script src="<?php echo esc_url( $prismjs_js ); ?>"></script>
 
-		<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.19.0/themes/prism.min.css" rel="stylesheet" />
-		<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.19.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+		<link href="<?php echo esc_url( $prismjs_css ); ?>" rel="stylesheet" />
 		<style>
 			body {
 				margin: 0;
