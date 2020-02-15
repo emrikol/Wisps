@@ -7,6 +7,7 @@
 
 // phpcs:disable WordPress.WP.EnqueuedResources
 global $post;
+
 $wisp_mime = get_post_meta( $post->ID, '_wisp_mime', true );
 if ( empty( $wisp_mime ) ) {
 	$wisp_mime = 'text/plain';
@@ -18,8 +19,6 @@ switch ( $wisp_mime ) {
 		$mime_type = 'language-none';
 		break;
 	case 'css':
-		$mime_type = 'language-css';
-		break;
 	case 'text/css':
 		$mime_type = 'language-css';
 		break;
@@ -30,38 +29,24 @@ switch ( $wisp_mime ) {
 		$mime_type = 'language-less';
 		break;
 	case 'htmlmixed':
-		$mime_type = 'language-html';
-		break;
 	case 'text/html':
 		$mime_type = 'language-html';
 		break;
 	case 'php':
-		$mime_type = 'language-php';
-		break;
 	case 'application/x-httpd':
-		$mime_type = 'language-php';
-		break;
 	case 'text/x-php':
 		$mime_type = 'language-php';
 		break;
 	case 'javascript':
-		$mime_type = 'language-js';
-		break;
 	case 'application/ecmascript':
-		$mime_type = 'language-js';
-		break;
-	case 'application/json':
-		$mime_type = 'language-json';
-		break;
 	case 'application/javascript':
 		$mime_type = 'language-js';
 		break;
+	case 'application/json':
 	case 'application/ld+json':
 		$mime_type = 'language-json';
 		break;
 	case 'text/typescript':
-		$mime_type = 'language-typescript';
-		break;
 	case 'application/typescript':
 		$mime_type = 'language-typescript';
 		break;
@@ -83,10 +68,10 @@ $prismjs_css = add_query_arg(
 <!DOCTYPE html>
 <html lang="en-US">
 	<head>
-		<title>Hello world! &#8211; Plugin: Wisps</title>
+		<title><?php echo esc_html( get_the_title( $post->ID ) ); ?></title>
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
-		<meta name='robots' content='noindex,follow' />
-		<link rel="canonical" href="https://wisps.sish.emrikol.com/hello-world/" />
+		<?php noindex(); ?>
+		<link rel="canonical" href="<?php echo esc_url( get_permalink( $post->ID ) ); ?>" />
 		<script src="<?php echo esc_url( $prismjs_js ); ?>"></script>
 
 		<link href="<?php echo esc_url( $prismjs_css ); ?>" rel="stylesheet" />
@@ -130,9 +115,16 @@ $prismjs_css = add_query_arg(
 				</div>
 
 				<div class="wisp-meta">
-					<a class='view-raw' href="<?php echo esc_url( trailingslashit( get_permalink( $post->ID ) ) . 'raw/' ); ?>" style="float:right">view raw</a>
-					<a class='permalink' href="<?php echo esc_url( get_permalink( $post->ID ) ); ?>"><?php echo esc_html( get_the_title( $post->ID ) ); ?></a>
-					displayed with ❤ by <a href="https://github.com/emrikol/wisps">Wisps</a>
+					<a class='view-raw' href="<?php echo esc_url( trailingslashit( get_permalink( $post->ID ) ) . 'raw/' ); ?>" style="float:right"><?php echo esc_html__( 'view raw', 'wisps' ); ?></a>
+					<?php
+					printf(
+						'<a class="permalink" href="%s">%s</a>%s<a href="%s">%s</a>',
+						esc_url( get_permalink( $post->ID ) ),
+						esc_html( get_the_title( $post->ID ) ),
+						esc_html__( ' displayed with ❤ by ', 'wisps' ),
+						esc_url( get_site_url() ),
+						esc_html( get_bloginfo( 'name' ) )
+					); ?>
 				</div>
 			</div>
 		</div>
