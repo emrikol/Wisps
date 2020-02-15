@@ -36,6 +36,13 @@ before_script:
   - export PHPCS_DIR=/tmp/phpcs
   - export SNIFFS_DIR=/tmp/sniffs
   - |
+    # Remove Xdebug for a huge performance increase
+    if [ -f ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini ]; then
+      phpenv config-rm xdebug.ini
+    else
+      echo "xdebug.ini does not exist"
+    fi
+  - |
     if [[ "$SNIFF" == "1" ]]; then
       # Install CodeSniffer for WordPress Coding Standards checks.
       wget -O $PHPCS_DIR/phpcs https://squizlabs.github.io/PHP_CodeSniffer/phpcs.phar
@@ -54,9 +61,32 @@ before_script:
   - |
   - bash bin/install-wp-tests.sh wordpress_test root '' localhost $WP_VERSION
   - export PATH="$PHPCS_DIR:$PATH"
+  - |
+    # Install WordPress and PHPUnit
+    if [[ ! -z "$WP_VERSION" ]] ; then
+      case "$TRAVIS_PHP_VERSION" in
+        7.3|7.2|7.1|7.0|nightly)
+          echo "Using PHPUnit 6.x"
+          composer global require "phpunit/phpunit:^6"
+          ;;
+        5.6|5.5|5.4|5.3)
+          echo "Using PHPUnit 4.x"
+          composer global require "phpunit/phpunit:^4"
+          ;;
+        5.2)
+          # Do nothing, use default PHPUnit 3.6.x
+          echo "Using default PHPUnit, hopefully 3.6"
+          ;;
+        *)
+          echo "No PHPUnit version handling for PHP version $TRAVIS_PHP_VERSION"
+          exit 1
+          ;;
+      esac
+    fi
+  - |
 script:
   # Search for PHP syntax errors.
   - find -L . -name '*.php' -print0 | xargs -0 -n 1 -P 4 php -l
   # WordPress Coding Standards.
   - if [[ "$SNIFF" == "1" ]]; then $PHPCS_DIR/scripts/phpcs -p -s -v -n . --standard=WordPress-VIP-Go,WordPress --ignore=tests; fi
-  - phpunit
+  - phpunit --verbose
