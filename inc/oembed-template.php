@@ -7,7 +7,10 @@
 
 // phpcs:disable WordPress.WP.EnqueuedResources
 global $post;
-$wisp_mime = get_post_meta( $post->ID, '_wisp_mime', true ) ?? 'text/plain';
+$wisp_mime = get_post_meta( $post->ID, '_wisp_mime', true );
+if ( empty( $wisp_mime ) ) {
+	$wisp_mime = 'text/plain';
+}
 $wisp_data = base64_decode( get_post_meta( $post->ID, '_wisp_data', true ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
 
 switch ( $wisp_mime ) {

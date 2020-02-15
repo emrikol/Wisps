@@ -20,7 +20,7 @@ matrix:
     - php: "7.3"
       env: WP_VERSION=latest WP_MULTISITE=0
     - php: "7.4"
-      env: WP_VERSION=latest WP_MULTISITE=0
+      env: WP_VERSION=latest WP_MULTISITE=0 SNIFF=1
     # n-1 major release
     - php: "5.6"
       env: WP_VERSION=5.2.5 WP_MULTISITE=0
@@ -96,5 +96,5 @@ script:
   # Search for PHP syntax errors.
   - find -L . -name '*.php' -print0 | xargs -0 -n 1 -P 4 php -l
   # WordPress Coding Standards.
-  - if [[ "$SNIFF" == "1" ]]; then $PHPCS_DIR/scripts/phpcs -p -s -v -n . --standard=WordPress-VIP-Go,WordPress --ignore=tests; fi
+  - if [[ "$SNIFF" == "1" ]]; then phpcs -p -s -v -n --standard=WordPress-VIP-Go,WordPress --ignore=tests .; fi
   - phpunit
