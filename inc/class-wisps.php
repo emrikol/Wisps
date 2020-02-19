@@ -225,7 +225,7 @@ class Wisps {
 			$wisp_data = wp_unslash( $_POST['wisp_data'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			$wisp_mime = isset( $_POST['wisp_mime'] ) ? sanitize_text_field( wp_unslash( $_POST['wisp_mime'] ) ) : 'text/plain';
 
-			self::meta_update_data( $post_id, $wisp_mime );
+			self::meta_update_data( $post_id, $wisp_data );
 			update_post_meta( $post_id, '_wisp_mime', $wisp_mime );
 		}
 	}
