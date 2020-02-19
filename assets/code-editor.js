@@ -1,3 +1,9 @@
+/**
+ * Script to set up the WordPress core code editor.
+ *
+ * @package Wisps
+ */
+
 var wisp_editor;
 ( function( $ ) {
 	$(
