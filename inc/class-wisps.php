@@ -43,7 +43,7 @@ class Wisps {
 		add_action( 'save_post', array( $this, 'save_meta' ) );
 		add_action( 'template_redirect', array( $this, 'display_raw_content' ) );
 
-		add_filter( 'the_content', array( $this, 'safely_display_content' ), PHP_INT_MIN, 1 ); // phpcs:ignore PHPCompatibility.Constants.NewConstants.php_int_minFound
+		add_filter( 'the_content', array( $this, 'safely_display_content' ), PHP_INT_MIN, 1 );
 		add_filter( 'enter_title_here', array( $this, 'title_placeholder' ) );
 		add_filter( 'gettext', array( $this, 'rename_excerpt' ), 10, 2 );
 		add_filter( 'embed_html', array( $this, 'filter_embed_html' ), 10, 4 );
@@ -51,15 +51,19 @@ class Wisps {
 
 	/**
 	 * Flushes rewrite rules on shutdown when plugin is activated.
+	 *
+	 * @return void
 	 */
-	public function activate_plugin() {
+	public function activate_plugin(): void {
 		add_action( 'shutdown', 'flush_rewrite_rules' );
 	}
 
 	/**
 	 * Registers the custom post type.
+	 *
+	 * @return void
 	 */
-	public function register_cpt() {
+	public function register_cpt(): void {
 		$labels = array(
 			'name'                  => esc_html_x( 'Wisps', 'Post Type General Name', 'wisps' ),
 			'singular_name'         => esc_html_x( 'Wisp', 'Post Type Singular Name', 'wisps' ),
@@ -116,8 +120,10 @@ class Wisps {
 
 	/**
 	 * Adds rewrites to view and download wisps.
+	 *
+	 * @return void
 	 */
-	public function add_rewrites() {
+	public function add_rewrites(): void {
 		add_rewrite_tag( '%wisp_raw%', '([^&]+)' );
 		add_rewrite_rule( 'wisp/(.+?)/view/?$', 'index.php?post_type=wisp&post_name=$matches[1]&wisp_raw=view', 'top' );
 		add_rewrite_rule( 'wisp/(.+?)/raw/?$', 'index.php?post_type=wisp&post_name=$matches[1]&wisp_raw=view', 'top' );
@@ -129,8 +135,10 @@ class Wisps {
 	 * Sets up admin scripts and the code editor.
 	 *
 	 * @param string $hook The page hook being ran on.
+	 *
+	 * @return void
 	 */
-	public function add_code_editor( $hook ) {
+	public function add_code_editor( string $hook ): void {
 		global $post;
 
 		if ( ! $post || 'wisp' !== $post->post_type ) {
@@ -150,8 +158,10 @@ class Wisps {
 
 	/**
 	 * Registers meta boxes.
+	 *
+	 * @return void
 	 */
-	public function add_metaboxes() {
+	public function add_metaboxes(): void {
 		add_meta_box( 'wisp-code', esc_html__( 'Wisp Code', 'wisps' ), array( $this, 'metabox_code_editor' ), 'wisp', 'advanced', 'high' );
 		add_meta_box( 'wisp-mime', esc_html__( 'Mime Type', 'wisps' ), array( $this, 'metabox_mime_type' ), 'wisp', 'side', 'high' );
 	}
@@ -159,9 +169,11 @@ class Wisps {
 	/**
 	 * Sets up the metabox for the code editor.
 	 *
-	 * @param WP_Post $post Post object.
+	 * @param \WP_Post $post Post object.
+	 *
+	 * @return void
 	 */
-	public function metabox_code_editor( $post ) {
+	public function metabox_code_editor( \WP_Post $post ): void {
 		$wisp_data = self::meta_get_data( $post->ID );
 		$wisp_name = get_the_title( $post_id );
 
@@ -175,9 +187,11 @@ class Wisps {
 	/**
 	 * Sets up the metabox for the mime type picker.
 	 *
-	 * @param WP_Post $post Post object.
+	 * @param \WP_Post $post Post object.
+	 *
+	 * @return void
 	 */
-	public function metabox_mime_type( $post ) {
+	public function metabox_mime_type( \WP_Post $post ): void {
 		$wisp_mime = get_post_meta( $post->ID, '_wisp_mime', true );
 		// Available mime types are taken from the wp_enqueue_code_editor function source.
 		?>
@@ -210,18 +224,20 @@ class Wisps {
 	 * Saves code and corresponding metadata.
 	 *
 	 * @param int $post_id Post Object ID.
+	 *
+	 * @return void
 	 */
-	public function save_meta( $post_id ) {
+	public function save_meta( int $post_id ): void {
 		if (
 			defined( 'DOING_AJAX' )
 			|| ! isset( $_POST['mime_type_nonce'] )
-			|| ! wp_verify_nonce( $_POST['mime_type_nonce'], 'wisp_mime_type_nonce' ) // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			|| ! wp_verify_nonce( $_POST['mime_type_nonce'], 'wisp_mime_type_nonce' )
 		) {
 			return;
 		}
 
 		if ( isset( $_POST['wisp_data'] ) ) {
-			$wisp_data = wp_unslash( $_POST['wisp_data'] ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$wisp_data = wp_unslash( $_POST['wisp_data'] );
 			$wisp_mime = isset( $_POST['wisp_mime'] ) ? sanitize_text_field( wp_unslash( $_POST['wisp_mime'] ) ) : 'text/plain';
 
 			self::meta_update_data( $post_id, $wisp_data );
@@ -233,11 +249,11 @@ class Wisps {
 	 * Returns wisp code data.
 	 *
 	 * @param int $post_id The wisp post id.
+	 *
 	 * @return string Wisp code data.
 	 */
-	public function meta_get_data( $post_id ) {
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
-		return base64_decode( get_post_meta( $post_id, '_wisp_data', true ) );
+	public function meta_get_data( int $post_id ): string {
+		return base64_decode( get_post_meta( $post_id, '_wisp_data', true ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_decode
 	}
 
 	/**
@@ -245,20 +261,21 @@ class Wisps {
 	 *
 	 * @param int    $post_id The wisp post id.
 	 * @param string $data    Wisp code data.
+	 *
 	 * @return int|bool The new meta field ID if a field with the given key didn't exist and was therefore added, true on successful update, false on failure.
 	 */
-	public function meta_update_data( $post_id, $data ) {
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
-		return update_post_meta( $post_id, '_wisp_data', base64_encode( $data ) );
+	public function meta_update_data( int $post_id, string $data ) {
+		return update_post_meta( $post_id, '_wisp_data', base64_encode( $data ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
 	}
 
 	/**
 	 * Filters the wisp content to safely display it for themes that do not have wisp support.
 	 *
 	 * @param string $content Post Object Content.
+	 *
 	 * @return string Post Object Content.
 	 */
-	public function safely_display_content( $content ) {
+	public function safely_display_content( string $content ): string {
 		if ( ! current_theme_supports( 'wisps' ) ) {
 			global $post;
 
@@ -274,8 +291,10 @@ class Wisps {
 
 	/**
 	 * Template redirect to either display the raw text or downloads the file.
+	 *
+	 * @return void
 	 */
-	public function display_raw_content() {
+	public function display_raw_content(): void {
 		global $wp_query;
 
 		if ( 'wisp' === $wp_query->query_vars['post_type'] && isset( $wp_query->query_vars['wisp_raw'] ) ) {
@@ -315,9 +334,10 @@ class Wisps {
 	 * Filters the title placeholder.
 	 *
 	 * @param string $title The title placeholder.
+	 *
 	 * @return string The title placeholder.
 	 */
-	public function title_placeholder( $title ) {
+	public function title_placeholder( string $title ): string {
 		$screen = get_current_screen();
 
 		if ( 'wisp' === $screen->post_type ) {
@@ -332,9 +352,10 @@ class Wisps {
 	 *
 	 * @param string $translation The new "translated" text.
 	 * @param string $original    The original text.
+	 *
 	 * @return string The new "translated" text.
 	 */
-	public function rename_excerpt( $translation, $original ) {
+	public function rename_excerpt( string $translation, string $original ): string {
 		if ( function_exists( 'get_current_screen' ) ) {
 			$screen = get_current_screen();
 			if ( null !== $screen && 'wisp' === $screen->post_type ) {
@@ -352,13 +373,14 @@ class Wisps {
 	/**
 	 * Filters the core oembed header data.
 	 *
-	 * @param string  $output The default oembed data.
-	 * @param WP_Post $post The post object.
-	 * @param int     $width The defailt width.
-	 * @param int     $height The defailt height.
+	 * @param string   $output The default oembed data.
+	 * @param \WP_Post $post The post object.
+	 * @param int      $width The defailt width.
+	 * @param int      $height The defailt height.
+	 *
 	 * @return string The custom wisp oembed data.
 	 */
-	public function filter_embed_html( $output, $post, $width, $height ) {
+	public function filter_embed_html( string $output, \WP_Post $post, int $width, int $height ): string {
 		if ( 'wisp' !== $post->post_type ) {
 			return $output;
 		}
@@ -369,8 +391,6 @@ class Wisps {
 		$mime_type = get_post_meta( $post->ID, '_wisp_mime', true );
 
 		ob_start();
-		// phpcs:disable WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-		// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped
 		?>
 <div class="wisp-embed">
 	<div id="gist-data">
@@ -383,7 +403,7 @@ class Wisps {
 		displayed with ❤ by <a href="https://github.com/emrikol/wisps">Wisps</a>
 	</div>
 </div>
-<script type='text/javascript'><?php echo file_get_contents( ABSPATH . WPINC . '/js/wp-embed.js' ); ?></script>
+<script type='text/javascript'><?php echo file_get_contents( ABSPATH . WPINC . '/js/wp-embed.js' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></script>
 		<?php
 		printf(
 			'<iframe sandbox="allow-scripts" security="restricted" src="%1$s" width="%2$d" height="%3$d" title="%4$s" frameborder="0" marginwidth="0" marginheight="0" scrolling="yes" class="wp-embedded-content wisp-embedded-content" style="width: 100%;"></iframe>',
