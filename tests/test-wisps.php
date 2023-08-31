@@ -13,15 +13,17 @@ class WispTest extends WP_UnitTestCase {
 	public function setUp() {
 		parent::setUp();
 
-		$this->post_id = self::factory()->post->create( array(
-			'post_type'   => 'wisp',
-			'post_status' => 'publish',
-			'post_title'  => 'test.js',
-			'meta_input'  => array(
-				'_wisp_mime' => 'application/javascript',
-				'_wisp_data' => base64_encode( $this->default_wisp_data ),
-			),
-		) );
+		$this->post_id = self::factory()->post->create(
+			array(
+				'post_type'   => 'wisp',
+				'post_status' => 'publish',
+				'post_title'  => 'test.js',
+				'meta_input'  => array(
+					'_wisp_mime' => 'application/javascript',
+					'_wisp_data' => base64_encode( $this->default_wisp_data ),
+				),
+			)
+		);
 	}
 
 	public function tearDown() {
@@ -58,5 +60,4 @@ class WispTest extends WP_UnitTestCase {
 
 		$this->assertContains( esc_html( $this->default_wisp_data ), apply_filters( 'the_content', $post->post_content ) );
 	}
-
 }

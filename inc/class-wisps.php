@@ -111,7 +111,6 @@ class Wisps {
 			'show_in_rest'        => true,
 		);
 		register_post_type( 'wisp', $args );
-
 	}
 
 

@@ -24,5 +24,4 @@ class SampleTest extends WP_UnitTestCase {
 	function test_plugin_activated() {
 		$this->assertTrue( is_plugin_active( 'wisps/wisps.php' ) );
 	}
-
 }

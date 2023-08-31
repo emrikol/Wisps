@@ -1,2 +1,19 @@
+# Development files
+package.json
+package-lock.json
 
+# Ignore temporary OS files
 .DS_Store
+.DS_Store?
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Local PHPCS configuration files
+.phpcs.xml
+phpcs.xml
+
+# Composer (repo root only)
+/vendor/
+composer.lock

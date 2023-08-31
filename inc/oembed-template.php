@@ -16,50 +16,50 @@ $wisp_data = Wisps::get_instance()->meta_get_data( $post->ID );
 
 switch ( $wisp_mime ) {
 	case 'text/plain':
-		$mime_type = 'language-none';
+		$wisp_mime_type = 'language-none';
 		break;
 	case 'css':
 	case 'text/css':
-		$mime_type = 'language-css';
+		$wisp_mime_type = 'language-css';
 		break;
 	case 'text/x-scss':
-		$mime_type = 'language-scss';
+		$wisp_mime_type = 'language-scss';
 		break;
 	case 'text/x-less':
-		$mime_type = 'language-less';
+		$wisp_mime_type = 'language-less';
 		break;
 	case 'htmlmixed':
 	case 'text/html':
-		$mime_type = 'language-html';
+		$wisp_mime_type = 'language-html';
 		break;
 	case 'php':
 	case 'application/x-httpd':
 	case 'text/x-php':
-		$mime_type = 'language-php';
+		$wisp_mime_type = 'language-php';
 		break;
 	case 'javascript':
 	case 'application/ecmascript':
 	case 'application/javascript':
-		$mime_type = 'language-js';
+		$wisp_mime_type = 'language-js';
 		break;
 	case 'application/json':
 	case 'application/ld+json':
-		$mime_type = 'language-json';
+		$wisp_mime_type = 'language-json';
 		break;
 	case 'text/typescript':
 	case 'application/typescript':
-		$mime_type = 'language-typescript';
+		$wisp_mime_type = 'language-typescript';
 		break;
 	default:
-		$mime_type = 'language-none';
+		$wisp_mime_type = 'language-none';
 }
 
-$prismjs_js = add_query_arg(
+$wisp_prismjs_js = add_query_arg(
 	array( 'ver' => rawurlencode( filemtime( plugin_dir_path( __FILE__ ) . '../assets/prismjs.min.js' ) ) ),
 	plugin_dir_url( __FILE__ ) . '../assets/prismjs.min.js'
 );
 
-$prismjs_css = add_query_arg(
+$wisp_prismjs_css = add_query_arg(
 	array( 'ver' => rawurlencode( filemtime( plugin_dir_path( __FILE__ ) . '../assets/prismjs.css' ) ) ),
 	plugin_dir_url( __FILE__ ) . '../assets/prismjs.css'
 );
@@ -70,11 +70,11 @@ $prismjs_css = add_query_arg(
 	<head>
 		<title><?php echo esc_html( get_the_title( $post->ID ) ); ?></title>
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
-		<?php noindex(); ?>
+		<?php wp_robots_noindex(); ?>
 		<link rel="canonical" href="<?php echo esc_url( get_permalink( $post->ID ) ); ?>" />
-		<script src="<?php echo esc_url( $prismjs_js ); ?>"></script>
+		<script src="<?php echo esc_url( $wisp_prismjs_js ); ?>"></script>
 
-		<link href="<?php echo esc_url( $prismjs_css ); ?>" rel="stylesheet" />
+		<link href="<?php echo esc_url( $wisp_prismjs_css ); ?>" rel="stylesheet" />
 		<style>
 			body {
 				margin: 0;
@@ -111,7 +111,7 @@ $prismjs_css = add_query_arg(
 		<div class='wisp-file'>
 			<div class="wisp-embed">
 				<div id="gist-data">
-					<pre><code class="line-numbers <?php echo sanitize_html_class( $mime_type ); ?>"><?php echo esc_html( $wisp_data ); ?></code></pre>
+					<pre><code class="line-numbers <?php echo sanitize_html_class( $wisp_mime_type ); ?>"><?php echo esc_html( $wisp_data ); ?></code></pre>
 				</div>
 
 				<div class="wisp-meta">
@@ -124,7 +124,8 @@ $prismjs_css = add_query_arg(
 						esc_html__( ' displayed with ❤ by ', 'wisps' ),
 						esc_url( get_site_url() ),
 						esc_html( get_bloginfo( 'name' ) )
-					); ?>
+					);
+					?>
 				</div>
 			</div>
 		</div>
