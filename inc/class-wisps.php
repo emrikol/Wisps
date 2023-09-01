@@ -139,21 +139,24 @@ class Wisps {
 	 * @return void
 	 */
 	public function add_code_editor( string $hook ): void {
+		if ( 'post.php' !== $hook && 'post-new.php' !== $hook ) {
+			return;
+		}
+
 		global $post;
 
 		if ( ! $post || 'wisp' !== $post->post_type ) {
 			return;
 		}
 
-		if ( 'post.php' === $hook || 'post-new.php' === $hook ) {
-			$wisp_mime = get_post_meta( $post->ID, '_wisp_mime', true );
-			if ( empty( $wisp_mime ) ) {
-				$wisp_mime = 'text/plain';
-			}
+		$wisp_mime = get_post_meta( $post->ID, '_wisp_mime', true ) ?: 'text/plain'; // phpcs:ignore Universal.Operators.DisallowShortTernary.Found
 
-			wp_enqueue_code_editor( array( 'type' => $wisp_mime ) );
-			wp_enqueue_script( 'wisp-code-editor', plugin_dir_url( __FILE__ ) . '../assets/code-editor.js', array( 'jquery' ), filemtime( plugin_dir_path( __FILE__ ) . '../assets/code-editor.js' ), true );
-		}
+		wp_enqueue_code_editor( array( 'type' => $wisp_mime ) );
+
+		$plugin_base_path = plugin_dir_path( __FILE__ ) . '../assets/';
+		$plugin_base_url  = plugin_dir_url( __FILE__ ) . '../assets/';
+
+		wp_enqueue_script( 'wisp-code-editor', $plugin_base_url . 'code-editor.js', array( 'jquery' ), filemtime( $plugin_base_path . 'code-editor.js' ), true );
 	}
 
 	/**
@@ -175,7 +178,7 @@ class Wisps {
 	 */
 	public function metabox_code_editor( \WP_Post $post ): void {
 		$wisp_data = self::meta_get_data( $post->ID );
-		$wisp_name = get_the_title( $post_id );
+		$wisp_name = get_the_title( $post->ID );
 
 		?>
 		<fieldset>
@@ -232,17 +235,18 @@ class Wisps {
 			defined( 'DOING_AJAX' )
 			|| ! isset( $_POST['mime_type_nonce'] )
 			|| ! wp_verify_nonce( $_POST['mime_type_nonce'], 'wisp_mime_type_nonce' )
+			|| ! current_user_can( 'edit_post', $post_id )
+			|| 'wisp' !== get_post_type( $post_id )
+			|| ! isset( $_POST['wisp_data'] )
 		) {
 			return;
 		}
 
-		if ( isset( $_POST['wisp_data'] ) ) {
-			$wisp_data = wp_unslash( $_POST['wisp_data'] );
-			$wisp_mime = isset( $_POST['wisp_mime'] ) ? sanitize_text_field( wp_unslash( $_POST['wisp_mime'] ) ) : 'text/plain';
+		$wisp_data = wp_unslash( $_POST['wisp_data'] );
+		$wisp_mime = isset( $_POST['wisp_mime'] ) ? sanitize_text_field( wp_unslash( $_POST['wisp_mime'] ) ) : 'text/plain';
 
-			self::meta_update_data( $post_id, $wisp_data );
-			update_post_meta( $post_id, '_wisp_mime', $wisp_mime );
-		}
+		self::meta_update_data( $post_id, $wisp_data );
+		update_post_meta( $post_id, '_wisp_mime', $wisp_mime );
 	}
 
 	/**
@@ -262,7 +266,7 @@ class Wisps {
 	 * @param int    $post_id The wisp post id.
 	 * @param string $data    Wisp code data.
 	 *
-	 * @return int|bool The new meta field ID if a field with the given key didn't exist and was therefore added, true on successful update, false on failure.
+	 * @return int|bool The new meta field ID if a field with the given key didn't exist and was therefore added, true on successful update, false otherwise.
 	 */
 	public function meta_update_data( int $post_id, string $data ) {
 		return update_post_meta( $post_id, '_wisp_data', base64_encode( $data ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
@@ -276,18 +280,15 @@ class Wisps {
 	 * @return string Post Object Content.
 	 */
 	public function safely_display_content( string $content ): string {
-		if ( ! current_theme_supports( 'wisps' ) ) {
-			global $post;
+		global $post;
 
-			if ( 'wisp' === $post->post_type ) {
-				$wisp_data = self::meta_get_data( $post->ID );
-				return '<pre>' . esc_html( $wisp_data ) . '</pre>';
-			}
+		if ( current_theme_supports( 'wisps' ) || 'wisp' !== $post->post_type ) {
+			return $content;
 		}
 
-		return $content;
+		$wisp_data = self::meta_get_data( $post->ID );
+		return '<pre>' . esc_html( $wisp_data ) . '</pre>';
 	}
-
 
 	/**
 	 * Template redirect to either display the raw text or downloads the file.
@@ -304,7 +305,7 @@ class Wisps {
 				( 'publish' !== get_post_status( $post->ID ) && ! current_user_can( 'edit_posts' ) ) ||
 				! empty( $post->post_password )
 			) {
-				wp_die( 'Unauthorized', 401 );
+				wp_die( 'Unauthorized', 'Unauthorized', array( 'response' => 401 ) );
 			}
 
 			if ( 'embed' === $wp_query->query_vars['wisp_raw'] ) {
@@ -323,6 +324,8 @@ class Wisps {
 				header( 'Content-Disposition: attachment; filename=' . sanitize_file_name( $post->post_title ) );
 				header( 'Content-Transfer-Encoding: binary' );
 				header( 'Content-Length: ' . strlen( $wisp_data ) );
+			} else {
+				header( 'Content-Type: text/plain' );
 			}
 
 			echo $wisp_data; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
@@ -348,7 +351,7 @@ class Wisps {
 	}
 
 	/**
-	 * Renames the excerpt metabox text.  Hacky, but works.
+	 * Renames the excerpt metabox text. Hacky, but works.
 	 *
 	 * @param string $translation The new "translated" text.
 	 * @param string $original    The original text.
@@ -372,6 +375,9 @@ class Wisps {
 
 	/**
 	 * Filters the core oembed header data.
+	 *
+	 * Inline the wp-embed.js script directly because this content is intended
+	 * for oEmbed, and the standard WP enqueue system isn't available.
 	 *
 	 * @param string   $output The default oembed data.
 	 * @param \WP_Post $post The post object.
